@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ABE — Agricultural Business Expert</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231b3a25'/%3E%3Ctext x='32' y='50' font-size='38' font-family='serif' text-anchor='middle'%3E🌽%3C/text%3E%3C/svg%3E"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  :root {
+    --soil:     #120d06;
+    --forest:   #1b3a25;
+    --sage:     #2e5c3a;
+    --field:    #4a7c59;
+    --moss:     #7aab6e;
+    --wheat:    #c8973a;
+    --amber:    #e3b057;
+    --cream:    #f4edd8;
+    --parchment:#fdf8ee;
+    --white:    #ffffff;
+    --muted:    #9aab90;
+    --radius:   12px;
+    --transition: 0.35s cubic-bezier(.4,0,.2,1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden; /* prevent horizontal scroll at root level */
+    max-width: 100%;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--parchment);
+    color: var(--soil);
+    line-height: 1.65;
+    overflow-x: hidden;
+    max-width: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Contain ALL sections — nothing bleeds out */
+  section, nav, footer, .stats-band { max-width: 100%; overflow-x: hidden; }
+  a, button { -webkit-tap-highlight-color: rgba(200,151,58,0.15); }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.5;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(27,58,37,0.95);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(122,171,110,0.18);
+    transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+  }
+  .nav-inner {
+    max-width: 1400px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 48px; gap: 24px;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem; font-weight: 900;
+    color: var(--amber); letter-spacing: -0.5px;
+    text-decoration: none; flex-shrink: 0;
+  }
+  .nav-logo span {
+    color: var(--cream); font-weight: 400; font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  .nav-links {
+    display: flex; gap: 24px; align-items: center; flex-wrap: nowrap;
+  }
+  .nav-links a {
+    color: rgba(244,237,216,0.75); font-size: 0.83rem; font-weight: 500;
+    text-decoration: none; letter-spacing: 0.02em; white-space: nowrap;
+    transition: color var(--transition);
+  }
+  .nav-links a:hover { color: var(--amber); }
+  .nav-cta {
+    background: var(--amber); color: var(--soil);
+    padding: 9px 20px; border-radius: 6px;
+    font-weight: 600; font-size: 0.83rem; white-space: nowrap; flex-shrink: 0;
+    text-decoration: none; letter-spacing: 0.02em;
+    transition: background var(--transition), transform var(--transition);
+  }
+  .nav-cta:hover { background: var(--wheat); transform: translateY(-1px); }
+
+  /* hamburger button — hidden on desktop */
+  .nav-hamburger {
+    display: none; flex-direction: column; justify-content: center; gap: 5px;
+    width: 36px; height: 36px; cursor: pointer; background: none; border: none;
+    padding: 4px; border-radius: 6px;
+    transition: background var(--transition);
+  }
+  .nav-hamburger:hover { background: rgba(244,237,216,0.1); }
+  .nav-hamburger span {
+    display: block; width: 22px; height: 2px;
+    background: var(--cream); border-radius: 2px;
+    transition: all 0.3s ease; transform-origin: center;
+  }
+  .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* mobile dropdown */
+  .nav-mobile {
+    display: none; flex-direction: column;
+    background: rgba(22,48,30,0.98);
+    border-top: 1px solid rgba(122,171,110,0.15);
+    padding: 8px 0 16px; overflow: hidden;
+    max-height: 0; transition: max-height 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  .nav-mobile.open { max-height: 420px; }
+  .nav-mobile a {
+    color: rgba(244,237,216,0.8); font-size: 0.95rem; font-weight: 500;
+    text-decoration: none; padding: 12px 28px;
+    border-bottom: 1px solid rgba(122,171,110,0.08);
+    transition: color var(--transition), background var(--transition);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nav-mobile a:last-child { border-bottom: none; }
+  .nav-mobile a:hover { color: var(--amber); background: rgba(244,237,216,0.04); }
+  .nav-mobile .mob-cta {
+    margin: 12px 28px 0; padding: 12px 20px; border-radius: 8px;
+    background: var(--amber); color: var(--soil) !important;
+    font-weight: 700 !important; justify-content: center;
+    border-bottom: none !important;
+  }
+  .nav-mobile .mob-cta:hover { background: var(--wheat) !important; }
+
+  /* ── Medium desktop: tighten nav ── */
+  @media (max-width: 1100px) {
+    .nav-inner { padding: 16px 28px; }
+    .nav-logo span { display: none; }
+    .nav-links { gap: 16px; }
+    .nav-links a { font-size: 0.8rem; }
+  }
+
+  /* ══════════════════════════════════════════
+     MOBILE — everything below 768px
+     Uses !important on layout properties to
+     guarantee grids collapse regardless of
+     specificity or cascade order.
+  ══════════════════════════════════════════ */
+  @media (max-width: 768px) {
+
+    /* ── Nav ── */
+    .nav-inner { padding: 12px 16px; }
+    .nav-links { display: none !important; }
+    .nav-cta  { display: none !important; }
+    .nav-hamburger { display: flex !important; }
+    .nav-mobile    { display: flex !important; }
+
+    /* ── Hero ── */
+    .hero { min-height: 100svh; }
+    .hero-hex { display: none; } /* decorative, causes overflow */
+    .hero-content {
+      grid-template-columns: 1fr !important;
+      padding: 90px 20px 52px !important;
+      gap: 28px !important;
+      width: 100%;
+    }
+    .hero-card { display: none !important; }
+    .hero h1 { font-size: 2.8rem; line-height: 1.05; margin-bottom: 18px; }
+    .hero-eyebrow { font-size: 0.7rem; padding: 4px 12px; }
+    .hero-sub { font-size: 0.95rem; margin-bottom: 28px; }
+    .hero-actions { flex-direction: column !important; gap: 12px; }
+    .hero-actions a {
+      width: 100% !important;
+      text-align: center !important;
+      justify-content: center !important;
+      padding: 15px 20px !important;
+    }
+
+    /* ── Stats ── */
+    .stats-band { flex-wrap: wrap !important; padding: 20px 16px; }
+    .stat-item {
+      flex: 1 1 45% !important;
+      border-right: none !important;
+      border-bottom: 1px solid rgba(122,171,110,0.15);
+      padding: 16px 12px;
+      text-align: center;
+    }
+    .stat-item:nth-child(3),
+    .stat-item:nth-child(4) { border-bottom: none; }
+    .stat-number { font-size: 2rem; }
+    .stat-label  { font-size: 0.72rem; }
+
+    /* ── Shared sections ── */
+    .section-wrap { padding: 60px 20px !important; }
+    .section-title { font-size: 2rem !important; }
+    .section-lead  { font-size: 0.95rem; margin-bottom: 32px; }
+
+    /* ── About ── */
+    .about-grid {
+      grid-template-columns: 1fr !important;
+      gap: 32px !important;
+    }
+    .about-badge { padding: 28px 22px; }
+    .pillar { padding: 16px; gap: 12px; }
+    .pillar-icon { width: 40px; height: 40px; font-size: 1.4rem; flex-shrink: 0; }
+
+    /* ── Skills ── */
+    .skills-grid {
+      grid-template-columns: 1fr !important;
+      gap: 14px !important;
+    }
+    .skill-card { padding: 22px 18px; }
+
+    /* ── How it works ── */
+    .how-header {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+      margin-bottom: 28px !important;
+    }
+    .steps-grid {
+      grid-template-columns: 1fr !important;
+      border-radius: 12px;
+    }
+    /* Re-set borders for single column */
+    .step { border-right: none !important; border-bottom: 1.5px solid rgba(18,13,6,0.08) !important; padding: 24px 18px; }
+    .step:last-child { border-bottom: none !important; }
+    .step-number { font-size: 2.2rem; margin-bottom: 10px; }
+    .step h4 { font-size: 1.05rem; }
+    .step p  { font-size: 0.86rem; }
+
+    /* ── Ethics ── */
+    .ethics-grid {
+      grid-template-columns: 1fr !important;
+      gap: 14px !important;
+    }
+    .ethics-card { padding: 22px 18px; }
+    .ethics-banner { flex-direction: column; gap: 10px; padding: 20px 18px; }
+    .ethics-banner p { font-size: 0.85rem; }
+
+    /* ── Team ── */
+    .team-intro {
+      grid-template-columns: 1fr !important;
+      gap: 28px !important;
+      margin-bottom: 32px;
+    }
+    .team-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+    .team-card { padding: 20px 12px; }
+    .team-avatar { width: 52px; height: 52px; font-size: 1.1rem; }
+    .team-card h4 { font-size: 0.82rem; }
+    .team-quote { padding: 24px 18px; }
+    .team-quote blockquote { font-size: 1rem; }
+
+    /* ── FAQ ── */
+    .faq-grid { grid-template-columns: 1fr !important; gap: 12px; }
+    .faq-q { font-size: 0.88rem; padding: 18px 16px; min-height: 52px; }
+    .faq-a { font-size: 0.85rem; padding: 0 16px; }
+    .faq-item.open .faq-a { padding-bottom: 18px; }
+
+    /* ── Contact ── */
+    .contact-grid {
+      grid-template-columns: 1fr !important;
+      gap: 32px !important;
+    }
+    .contact-item { padding: 16px; }
+    .contact-form { padding: 26px 18px; }
+    .contact-form h3 { font-size: 1.25rem; margin-bottom: 20px; }
+    /* 16px font-size prevents iOS auto-zoom on input focus */
+    .form-group input,
+    .form-group select,
+    .form-group textarea { font-size: 16px !important; padding: 13px 12px; }
+    .form-row { grid-template-columns: 1fr !important; gap: 0; }
+    .form-submit { padding: 15px; font-size: 1rem; min-height: 52px; }
+
+    /* ── CTA ── */
+    #cta .section-wrap { padding: 64px 20px !important; }
+    .cta-actions {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 12px;
+    }
+    .cta-actions a { text-align: center !important; justify-content: center !important; padding: 15px 20px !important; }
+    .telegram-note { font-size: 0.74rem; flex-wrap: wrap; justify-content: center; }
+
+    /* ── Footer ── */
+    footer { flex-direction: column !important; align-items: flex-start !important; padding: 32px 20px; gap: 20px; }
+    .footer-links { flex-wrap: wrap; gap: 12px; }
+    .footer-links a { font-size: 0.8rem; }
+    .footer-logo span { display: block; margin-left: 0; margin-top: 4px; font-size: 0.72rem; }
+    .footer-copy { font-size: 0.72rem; line-height: 1.6; }
+  }
+
+  /* ── Small phones (under 380px) ── */
+  @media (max-width: 380px) {
+    .hero h1 { font-size: 2.3rem; }
+    .section-title { font-size: 1.85rem !important; }
+    .section-wrap { padding: 52px 16px !important; }
+    .team-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .stat-item { flex: 1 1 100% !important; border-bottom: 1px solid rgba(122,171,110,0.15) !important; }
+    .stat-item:last-child { border-bottom: none !important; }
+    .contact-form { padding: 22px 14px; }
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    background: var(--forest);
+    position: relative; overflow: hidden;
+    display: flex; align-items: center;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 50%, rgba(74,124,89,0.25) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 80% at 10% 80%, rgba(200,151,58,0.12) 0%, transparent 50%);
+  }
+  /* field rows decoration */
+  .hero-rows {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 220px;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(46,92,58,0.4) 0px, rgba(46,92,58,0.4) 6px,
+      transparent 6px, transparent 38px
+    );
+    mask-image: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+  }
+  /* hex grid right side */
+  .hero-hex {
+    position: absolute; right: -60px; top: 50%; transform: translateY(-50%);
+    width: 580px; height: 580px; opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpolygon points='28,2 54,16 54,44 28,58 2,44 2,16' fill='none' stroke='%23f4edd8' stroke-width='1.5'/%3E%3Cpolygon points='28,52 54,66 54,94 28,108 2,94 2,66' fill='none' stroke='%23f4edd8' stroke-width='1.5'/%3E%3Cpolygon points='56,2 82,16 82,44 56,58 30,44 30,16' fill='none' stroke='%23f4edd8' stroke-width='1.5'/%3E%3C/svg%3E");
+  }
+  .hero-content {
+    position: relative; z-index: 2;
+    max-width: 1180px; margin: 0 auto;
+    padding: 120px 48px 80px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(200,151,58,0.15);
+    border: 1px solid rgba(200,151,58,0.35);
+    color: var(--amber); padding: 5px 14px; border-radius: 100px;
+    font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .hero-eyebrow::before { content: '◆'; font-size: 0.55rem; }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 5vw, 4.8rem); line-height: 1.05;
+    font-weight: 900; color: var(--cream); margin-bottom: 28px;
+    letter-spacing: -1px;
+  }
+  .hero h1 em { color: var(--amber); font-style: italic; }
+  .hero-sub {
+    color: rgba(244,237,216,0.72); font-size: 1.1rem; line-height: 1.7;
+    max-width: 460px; margin-bottom: 42px;
+  }
+  .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--amber); color: var(--soil);
+    padding: 14px 32px; border-radius: 8px;
+    font-weight: 700; font-size: 0.95rem;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+    transition: all var(--transition);
+    box-shadow: 0 4px 24px rgba(200,151,58,0.35);
+  }
+  .btn-primary:hover { background: #d9a845; transform: translateY(-2px); box-shadow: 0 8px 32px rgba(200,151,58,0.45); }
+  .btn-outline {
+    border: 1.5px solid rgba(244,237,216,0.3); color: var(--cream);
+    padding: 14px 32px; border-radius: 8px;
+    font-weight: 500; font-size: 0.95rem;
+    text-decoration: none;
+    transition: all var(--transition);
+  }
+  .btn-outline:hover { border-color: var(--amber); color: var(--amber); }
+
+  /* hero card */
+  .hero-card {
+    background: rgba(244,237,216,0.06);
+    border: 1px solid rgba(244,237,216,0.12);
+    border-radius: 16px;
+    padding: 36px;
+    backdrop-filter: blur(12px);
+  }
+  .hero-card-label {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 16px;
+  }
+  .chat-bubble {
+    border-radius: 12px; padding: 14px 18px; font-size: 0.9rem;
+    line-height: 1.5; margin-bottom: 12px;
+    animation: fadeUp 0.5s ease both;
+  }
+  .chat-bubble:nth-child(2) { animation-delay: 0.15s; }
+  .chat-bubble:nth-child(3) { animation-delay: 0.3s; }
+  .chat-bubble:nth-child(4) { animation-delay: 0.45s; }
+  .chat-farmer {
+    background: rgba(244,237,216,0.1); color: var(--cream);
+    margin-left: 28px;
+    border-bottom-right-radius: 3px;
+  }
+  .chat-farmer::before { content: '🌾 '; }
+  .chat-abe {
+    background: rgba(200,151,58,0.2); color: var(--cream);
+    border: 1px solid rgba(200,151,58,0.25);
+    margin-right: 28px;
+    border-bottom-left-radius: 3px;
+  }
+  .chat-abe::before { content: '🤖 ABE: '; color: var(--amber); font-weight: 600; }
+  .chat-abe strong { color: var(--amber); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── STATS BAND ── */
+  .stats-band {
+    background: var(--soil);
+    padding: 32px 48px;
+    display: flex; align-items: center; justify-content: center; gap: 0;
+    border-top: 1px solid rgba(74,124,89,0.3);
+    border-bottom: 1px solid rgba(74,124,89,0.3);
+  }
+  .stat-item {
+    text-align: center; padding: 0 56px;
+    border-right: 1px solid rgba(122,171,110,0.2);
+    flex: 1;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem; font-weight: 900; color: var(--amber);
+    line-height: 1;
+  }
+  .stat-label { font-size: 0.8rem; color: rgba(154,171,144,0.85); margin-top: 6px; }
+
+  /* ── SECTIONS SHARED ── */
+  section { position: relative; }
+  .section-wrap { max-width: 1180px; margin: 0 auto; padding: 100px 48px; }
+  .section-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--field); margin-bottom: 16px;
+  }
+  .section-tag::before { content: ''; display: block; width: 24px; height: 1.5px; background: var(--field); }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 3.5vw, 3.2rem);
+    font-weight: 900; line-height: 1.1;
+    letter-spacing: -0.5px; margin-bottom: 20px;
+  }
+  .section-title em { color: var(--wheat); font-style: italic; }
+  .section-lead {
+    font-size: 1.05rem; line-height: 1.75;
+    color: rgba(18,13,6,0.65); max-width: 560px; margin-bottom: 56px;
+    word-wrap: break-word;
+  }
+
+  /* ── ABOUT ── */
+  #about { background: var(--parchment); }
+  .about-grid {
+    display: grid; grid-template-columns: 1fr 1.1fr; gap: 80px; align-items: center;
+  }
+  .about-visual {
+    position: relative;
+  }
+  .about-badge {
+    background: var(--forest); color: var(--cream);
+    border-radius: 16px; padding: 40px;
+    position: relative; overflow: hidden;
+  }
+  .about-badge::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent, transparent 14px,
+      rgba(122,171,110,0.06) 14px, rgba(122,171,110,0.06) 15px
+    );
+  }
+  .about-badge-icon {
+    font-size: 3.5rem; margin-bottom: 20px; display: block;
+  }
+  .about-badge h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem; color: var(--amber); margin-bottom: 12px;
+  }
+  .about-badge p { color: rgba(244,237,216,0.7); font-size: 0.92rem; line-height: 1.7; }
+  .about-tag-row {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px;
+  }
+  .about-tag {
+    background: rgba(200,151,58,0.15); border: 1px solid rgba(200,151,58,0.3);
+    color: var(--amber); padding: 5px 12px; border-radius: 6px;
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em;
+  }
+  .pillars { display: flex; flex-direction: column; gap: 24px; }
+  .pillar {
+    display: flex; gap: 20px; align-items: flex-start;
+    padding: 24px; border-radius: 12px;
+    border: 1.5px solid transparent;
+    transition: all var(--transition);
+  }
+  .pillar:hover {
+    background: rgba(46,92,58,0.06);
+    border-color: rgba(46,92,58,0.2);
+  }
+  .pillar-icon {
+    font-size: 1.8rem; flex-shrink: 0;
+    width: 48px; height: 48px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(46,92,58,0.1); border-radius: 10px;
+  }
+  .pillar h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; color: var(--forest);
+  }
+  .pillar p { font-size: 0.9rem; color: rgba(18,13,6,0.6); line-height: 1.6; }
+
+  /* ── SKILLS ── */
+  #skills { background: var(--forest); }
+  #skills .section-title { color: var(--cream); }
+  #skills .section-lead { color: rgba(244,237,216,0.6); }
+
+  /* Featured hero card */
+  .skill-featured {
+    background: rgba(200,151,58,0.12);
+    border: 1.5px solid rgba(200,151,58,0.35);
+    border-radius: 16px; padding: 40px 44px;
+    margin-bottom: 24px;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 32px; align-items: center;
+    position: relative; overflow: hidden;
+    transition: all var(--transition);
+  }
+  .skill-featured::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(200,151,58,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .skill-featured:hover {
+    background: rgba(200,151,58,0.18);
+    border-color: rgba(200,151,58,0.55);
+    transform: translateY(-2px);
+  }
+  .skill-featured-body {}
+  .skill-featured-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(200,151,58,0.2); border: 1px solid rgba(200,151,58,0.4);
+    color: var(--amber); padding: 4px 12px; border-radius: 100px;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .skill-featured h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; font-weight: 900; color: var(--cream);
+    margin-bottom: 12px; line-height: 1.1;
+  }
+  .skill-featured h3 em { color: var(--amber); font-style: italic; }
+  .skill-featured p {
+    font-size: 0.95rem; color: rgba(244,237,216,0.65);
+    line-height: 1.7; max-width: 520px; margin-bottom: 20px;
+  }
+  .skill-featured-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--amber); color: var(--soil);
+    padding: 10px 22px; border-radius: 7px;
+    font-weight: 700; font-size: 0.85rem;
+    text-decoration: none; transition: all var(--transition);
+  }
+  .skill-featured-cta:hover { background: var(--wheat); transform: translateY(-1px); }
+  .skill-featured-icon {
+    font-size: 5rem; opacity: 0.5; flex-shrink: 0;
+    filter: drop-shadow(0 4px 16px rgba(200,151,58,0.3));
+  }
+  .skill-featured-source {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem; color: var(--moss); letter-spacing: 0.04em;
+    margin-top: 12px;
+  }
+  .skill-featured-source::before { content: '↗'; }
+
+  /* 2×3 grid of regular cards */
+  .skills-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  }
+  .skill-card {
+    background: rgba(244,237,216,0.05);
+    border: 1px solid rgba(244,237,216,0.1);
+    border-radius: 14px; padding: 28px 24px;
+    transition: all var(--transition);
+    position: relative; overflow: hidden;
+  }
+  .skill-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--wheat), transparent);
+    opacity: 0; transition: opacity var(--transition);
+  }
+  .skill-card:hover {
+    background: rgba(244,237,216,0.09);
+    border-color: rgba(200,151,58,0.3);
+    transform: translateY(-3px);
+  }
+  .skill-card:hover::before { opacity: 1; }
+  .skill-icon {
+    font-size: 1.8rem; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: center;
+    width: 50px; height: 50px;
+    background: rgba(200,151,58,0.15); border-radius: 11px;
+  }
+  .skill-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem; font-weight: 700; color: var(--cream); margin-bottom: 8px;
+  }
+  .skill-card p { font-size: 0.85rem; color: rgba(244,237,216,0.55); line-height: 1.65; }
+  .skill-source {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 14px; font-family: 'DM Mono', monospace;
+    font-size: 0.66rem; color: var(--moss); letter-spacing: 0.04em;
+  }
+  .skill-source::before { content: '↗'; }
+
+  /* Mobile overrides for skills */
+  @media (max-width: 768px) {
+    .skill-featured {
+      grid-template-columns: 1fr !important;
+      padding: 28px 22px !important;
+      gap: 16px !important;
+    }
+    .skill-featured-icon { font-size: 3.5rem; justify-self: start; }
+    .skill-featured h3 { font-size: 1.5rem; }
+    .skills-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
+    .skill-card { padding: 22px 18px; }
+  }
+
+  /* ── HOW IT WORKS ── */
+  #how { background: var(--cream); }
+  .how-header {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: end;
+    margin-bottom: 64px;
+  }
+  .steps-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+    border: 1.5px solid rgba(18,13,6,0.1); border-radius: 16px; overflow: hidden;
+  }
+  .step {
+    padding: 36px 32px;
+    border-right: 1.5px solid rgba(18,13,6,0.08);
+    border-bottom: 1.5px solid rgba(18,13,6,0.08);
+    position: relative; background: var(--white);
+    transition: background var(--transition);
+  }
+  .step:hover { background: rgba(244,237,216,0.6); }
+  .step:nth-child(2n) { border-right: none; }
+  .step:nth-child(3), .step:nth-child(4) { border-bottom: none; }
+  .step-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem; font-weight: 900;
+    color: rgba(46,92,58,0.12); line-height: 1;
+    margin-bottom: 14px;
+  }
+  .step h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; color: var(--forest);
+  }
+  .step p { font-size: 0.88rem; color: rgba(18,13,6,0.6); line-height: 1.65; }
+  .step-badge {
+    display: inline-block; margin-top: 12px;
+    background: rgba(46,92,58,0.08); border: 1px solid rgba(46,92,58,0.2);
+    color: var(--sage); padding: 3px 10px; border-radius: 4px;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+  }
+
+  /* ── ETHICS ── */
+  #ethics { background: var(--forest); }
+  #ethics .section-title { color: var(--cream); }
+  #ethics .section-lead { color: rgba(244,237,216,0.6); }
+  .ethics-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  .ethics-card {
+    background: rgba(244,237,216,0.05);
+    border: 1px solid rgba(244,237,216,0.1);
+    border-radius: 14px; padding: 32px;
+    transition: all var(--transition);
+  }
+  .ethics-card:hover {
+    background: rgba(244,237,216,0.09);
+    border-color: rgba(200,151,58,0.3);
+    transform: translateY(-3px);
+  }
+  .ethics-icon {
+    font-size: 1.8rem; margin-bottom: 16px;
+    width: 52px; height: 52px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(200,151,58,0.12); border-radius: 10px;
+  }
+  .ethics-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; font-weight: 700; color: var(--amber); margin-bottom: 10px;
+  }
+  .ethics-card p { font-size: 0.88rem; color: rgba(244,237,216,0.55); line-height: 1.65; }
+  .ethics-banner {
+    margin-top: 40px;
+    background: rgba(200,151,58,0.12); border: 1px solid rgba(200,151,58,0.25);
+    border-radius: 12px; padding: 28px 32px;
+    display: flex; align-items: center; gap: 20px;
+  }
+  .ethics-banner-icon { font-size: 2rem; flex-shrink: 0; }
+  .ethics-banner p { font-size: 0.92rem; color: rgba(244,237,216,0.7); line-height: 1.65; }
+  .ethics-banner strong { color: var(--amber); }
+
+  /* ── CONTACT ── */
+  #contact { background: var(--parchment); }
+  .contact-grid {
+    display: grid; grid-template-columns: 1fr 1.2fr; gap: 72px; align-items: start;
+  }
+  .contact-info { display: flex; flex-direction: column; gap: 24px; }
+  .contact-item {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 20px; border-radius: 12px;
+    border: 1.5px solid rgba(18,13,6,0.08);
+    background: var(--white); transition: all var(--transition);
+  }
+  .contact-item:hover { border-color: rgba(46,92,58,0.3); transform: translateX(4px); }
+  .contact-item-icon {
+    font-size: 1.4rem; width: 44px; height: 44px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(46,92,58,0.08); border-radius: 8px;
+  }
+  .contact-item h4 { font-size: 0.82rem; font-weight: 600; color: var(--forest); margin-bottom: 2px; letter-spacing: 0.02em; }
+  .contact-item a, .contact-item span {
+    font-size: 0.9rem; color: rgba(18,13,6,0.6);
+    text-decoration: none; line-height: 1.5;
+  }
+  .contact-item a:hover { color: var(--wheat); }
+  .contact-form {
+    background: var(--white); border: 1.5px solid rgba(18,13,6,0.08);
+    border-radius: 16px; padding: 40px;
+  }
+  .contact-form h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem; font-weight: 700; color: var(--forest); margin-bottom: 28px;
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .form-group label { font-size: 0.78rem; font-weight: 600; color: var(--sage); letter-spacing: 0.04em; text-transform: uppercase; }
+  .form-group input, .form-group select, .form-group textarea {
+    border: 1.5px solid rgba(18,13,6,0.12); border-radius: 8px;
+    padding: 11px 14px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem; color: var(--soil); background: var(--parchment);
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none; resize: none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(46,92,58,0.1);
+  }
+  .form-group textarea { min-height: 110px; }
+  .form-submit {
+    width: 100%; background: var(--forest); color: var(--cream);
+    border: none; border-radius: 8px; padding: 14px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; transition: all var(--transition);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .form-submit:hover { background: var(--sage); transform: translateY(-1px); }
+  .form-success {
+    display: none; text-align: center; padding: 20px 0;
+    color: var(--sage); font-weight: 600; font-size: 0.95rem;
+    transition: opacity 0.6s ease;
+  }
+  .form-success span { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+  /* ── TEAM ── */
+  #team { background: var(--parchment); }
+  .team-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .team-card {
+    background: var(--white);
+    border: 1px solid rgba(18,13,6,0.08);
+    border-radius: 14px; padding: 28px 20px; text-align: center;
+    transition: all var(--transition);
+  }
+  .team-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(18,13,6,0.12);
+    border-color: rgba(46,92,58,0.3);
+  }
+  .team-avatar {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--sage), var(--field));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; font-weight: 900; color: var(--cream);
+    margin: 0 auto 16px;
+  }
+  .team-card h4 { font-size: 0.9rem; font-weight: 600; color: var(--soil); margin-bottom: 4px; }
+  .team-card span { font-size: 0.75rem; color: rgba(18,13,6,0.45); }
+  .team-intro {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+    margin-bottom: 56px;
+  }
+  .team-quote {
+    background: var(--forest); border-radius: 14px; padding: 36px;
+    color: var(--cream);
+  }
+  .team-quote blockquote {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem; line-height: 1.6; font-style: italic;
+    color: var(--amber); margin-bottom: 16px;
+  }
+  .team-quote cite { font-size: 0.82rem; color: rgba(244,237,216,0.5); }
+
+  /* ── FAQ ── */
+  #faq { background: var(--cream); }
+  .faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .faq-item {
+    background: var(--white);
+    border: 1.5px solid rgba(18,13,6,0.08);
+    border-radius: 12px; overflow: hidden;
+    transition: border-color var(--transition);
+  }
+  .faq-item:hover { border-color: rgba(46,92,58,0.3); }
+  .faq-q {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 22px 24px; cursor: pointer;
+    font-weight: 600; font-size: 0.95rem; color: var(--forest);
+    user-select: none;
+    gap: 12px;
+  }
+  .faq-q .arrow {
+    color: var(--field); font-size: 1.1rem; flex-shrink: 0;
+    transition: transform var(--transition);
+  }
+  .faq-a {
+    padding: 0 24px; max-height: 0; overflow: hidden;
+    font-size: 0.9rem; color: rgba(18,13,6,0.62); line-height: 1.7;
+    transition: max-height 0.4s cubic-bezier(.4,0,.2,1), padding 0.3s;
+  }
+  .faq-item.open .faq-q { color: var(--wheat); }
+  .faq-item.open .arrow { transform: rotate(180deg); color: var(--amber); }
+  .faq-item.open .faq-a { max-height: 300px; padding-bottom: 22px; }
+
+  /* ── CTA ── */
+  #cta {
+    background: linear-gradient(135deg, var(--soil) 0%, var(--forest) 100%);
+    text-align: center;
+  }
+  #cta .section-wrap { padding: 100px 48px; }
+  #cta .section-title { color: var(--cream); }
+  #cta .section-lead { color: rgba(244,237,216,0.6); margin: 0 auto 48px; }
+  .cta-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .telegram-note {
+    margin-top: 28px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 0.82rem; color: rgba(244,237,216,0.4);
+  }
+  .telegram-note::before { content: '✈'; color: var(--muted); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--soil); padding: 40px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 20px;
+  }
+  .footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; font-weight: 900; color: var(--amber);
+  }
+  .footer-logo span { color: rgba(244,237,216,0.4); font-size: 0.8rem; font-weight: 400; margin-left: 10px; }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { color: rgba(244,237,216,0.4); font-size: 0.82rem; text-decoration: none; transition: color var(--transition); }
+  .footer-links a:hover { color: var(--amber); }
+  .footer-copy { color: rgba(244,237,216,0.25); font-size: 0.78rem; }
+
+  /* ── SCROLL REVEAL ── */
+  .reveal {
+    opacity: 0; transform: translateY(28px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav id="mainNav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">ABE <span>Agricultural Business Expert</span></a>
+    <div class="nav-links">
+      <a href="#about">About</a>
+      <a href="#skills">What ABE Does</a>
+      <a href="#how">How It Works</a>
+      <a href="#ethics">Ethics</a>
+      <a href="#team">Our Team</a>
+      <a href="#faq">FAQ</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <a class="nav-cta" href="https://t.me/the_ABE_bot" target="_blank" rel="noopener">Try ABE →</a>
+    <button class="nav-hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="nav-mobile" id="mobileMenu">
+    <a href="#about" onclick="closeMobile()">🌾 About ABE</a>
+    <a href="#skills" onclick="closeMobile()">⚡ What ABE Does</a>
+    <a href="#how" onclick="closeMobile()">🔍 How It Works</a>
+    <a href="#ethics" onclick="closeMobile()">⚖️ Ethics</a>
+    <a href="#team" onclick="closeMobile()">👥 Our Team</a>
+    <a href="#faq" onclick="closeMobile()">❓ FAQ</a>
+    <a href="#contact" onclick="closeMobile()">✉️ Contact</a>
+    <a href="https://t.me/the_ABE_bot" target="_blank" rel="noopener" class="mob-cta" onclick="closeMobile()">Try ABE on Telegram →</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-rows"></div>
+  <div class="hero-hex"></div>
+  <div class="hero-content">
+    <div>
+      <div class="hero-eyebrow">Pi515 AI Challenge 2026 &nbsp;·&nbsp; SAU Hive Mind</div>
+      <h1>Your farm's<br/><em>smartest</em><br/>advisor.</h1>
+      <p class="hero-sub">
+        ABE is an AI-powered farm business expert built for beginning Iowa farmers.
+        Real Iowa data. Verified sources. Plain language. No consultant required.
+      </p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="#skills">See What ABE Can Do ↓</a>
+        <a class="btn-outline" href="https://t.me/the_ABE_bot" target="_blank" rel="noopener">Try ABE on Telegram ✈</a>
+      </div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-card-label">Live conversation example</div>
+      <div class="chat-bubble chat-farmer">
+        I just got a lease offer for 200 acres in Story County — $280/acre. Is that fair?
+      </div>
+      <div class="chat-bubble chat-abe">
+        The ISU Extension county average for Story County is <strong>$220/acre</strong>. That offer is <strong>27% above market</strong> — an extra $12,000/year on 200 acres. Here's how to negotiate it down.
+      </div>
+      <div class="chat-bubble chat-farmer">
+        Also — what programs might I qualify for as a beginner?
+      </div>
+      <div class="chat-bubble chat-abe">
+        Based on your profile: <strong>Iowa BFTC, Iowa BFLP, and FSA Direct Farm Loans</strong>. Want me to walk you through each one?
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── STATS ── -->
+<div class="stats-band">
+  <div class="stat-item">
+    <div class="stat-number">41,264</div>
+    <div class="stat-label">Beginning Iowa Farmers</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">&gt;35%</div>
+    <div class="stat-label">5-Year Farm Exit Rate</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">$67M+</div>
+    <div class="stat-label">Potential Annual Savings</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">3×</div>
+    <div class="stat-label">Income Uplift (top vs. bottom mgmt. tier)</div>
+  </div>
+</div>
+
+<!-- ── ABOUT ── -->
+<section id="about">
+  <div class="section-wrap">
+    <div class="about-grid">
+      <div>
+        <div class="section-tag reveal">What is ABE</div>
+        <h2 class="section-title reveal">Not a chatbot.<br/><em>An advisor.</em></h2>
+        <p class="section-lead reveal">
+          Most chatbots wait to be asked. ABE works in the background — monitoring prices, screening programs, and surfacing what matters before you even know to ask.
+        </p>
+        <div class="pillars">
+          <div class="pillar reveal reveal-delay-1">
+            <div class="pillar-icon">🔍</div>
+            <div>
+              <h4>Iowa-Specific Intelligence</h4>
+              <p>Every number ABE cites comes from Iowa data: ISU Extension, USDA NASS, Iowa Finance Authority. No misleading national averages.</p>
+            </div>
+          </div>
+          <div class="pillar reveal reveal-delay-2">
+            <div class="pillar-icon">🛡️</div>
+            <div>
+              <h4>Trust-First Architecture</h4>
+              <p>All financial calculations run on deterministic Python code — never the AI. Every recommendation traces back to a citable source.</p>
+            </div>
+          </div>
+          <div class="pillar reveal reveal-delay-3">
+            <div class="pillar-icon">📱</div>
+            <div>
+              <h4>Available on Any Phone</h4>
+              <p>ABE lives in Telegram. No app to install, no dashboard to learn. Open a chat, describe your situation, get a sourced answer.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="about-visual reveal">
+        <div class="about-badge">
+          <span class="about-badge-icon">🌽</span>
+          <h3>Built for Beginning Farmers</h3>
+          <p>
+            A beginning farmer in Story County, Iowa should not need a consultant, a $2,500/year subscription, or a computer science degree to answer a straightforward question about their operation.
+            ABE makes expert-level guidance as accessible as a text message.
+          </p>
+          <div class="about-tag-row">
+            <span class="about-tag">RAG-Powered</span>
+            <span class="about-tag">Verified Sources</span>
+            <span class="about-tag">Iowa-Specific</span>
+            <span class="about-tag">Telegram Bot</span>
+            <span class="about-tag">Free to Use</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SKILLS ── -->
+<section id="skills">
+  <div class="section-wrap">
+    <div class="section-tag reveal" style="color:var(--moss);">ABE's Capabilities</div>
+    <h2 class="section-title reveal" style="color:var(--cream);">Seven skills.<br/><em>One advisor.</em></h2>
+    <p class="section-lead reveal">
+      Each skill does one thing well. Together, they cover the full scope of decisions a beginning Iowa farmer faces in their first years.
+    </p>
+
+    <!-- Featured skill -->
+    <div class="skill-featured reveal">
+      <div class="skill-featured-body">
+        <div class="skill-featured-badge">⭐ Featured Skill</div>
+        <h3>Budget <em>Planner</em></h3>
+        <p>Have a set amount to invest in farmland but not sure where to put it? Tell ABE your budget and your situation — rent vs. buy, county preferences, soil quality — and ABE maps out your best path forward. It's not about what inputs to buy; it's about making the smartest land strategy decision with what you have.</p>
+        <a class="skill-featured-cta" href="https://t.me/the_ABEbot" target="_blank" rel="noopener">Try it on Telegram ✈</a>
+        <br/><span class="skill-featured-source">ISU AgDM cost benchmarks · USDA NASS pricing</span>
+      </div>
+      <div class="skill-featured-icon">💼</div>
+    </div>
+
+    <!-- 2×3 grid -->
+    <div class="skills-grid">
+      <div class="skill-card reveal">
+        <div class="skill-icon">📋</div>
+        <h3>Rental Rate Check</h3>
+        <p>Not sure if a lease offer is fair? Give ABE the price and county and it benchmarks it against the latest ISU Extension survey data — telling you exactly where you stand and whether there's room to negotiate.</p>
+        <span class="skill-source">ISU Extension AgDM C2-10 · 2025 Survey</span>
+      </div>
+      <div class="skill-card reveal reveal-delay-1">
+        <div class="skill-icon">🏛️</div>
+        <h3>Program Screener</h3>
+        <p>There are more programs available to beginning farmers than most people realize. ABE screens your profile against FSA loans, EQIP, ARC/PLC, Iowa tax credits, and more — surfacing the ones you actually qualify for with clear next steps.</p>
+        <span class="skill-source">FSA · EQIP · IFA BFLP · Iowa Tax Credit</span>
+      </div>
+      <div class="skill-card reveal reveal-delay-2">
+        <div class="skill-icon">💰</div>
+        <h3>Crop Margin Simulator</h3>
+        <p>Wondering if the numbers pencil out? ABE estimates your net margin per acre using live Iowa prices and ISU cost benchmarks. Give it your rent, yield expectations, and crop — it gives you profitability, break-even price, and a clear picture of your risk.</p>
+        <span class="skill-source">ISU Extension AgDM A1-20 · USDA NASS live</span>
+      </div>
+      <div class="skill-card reveal reveal-delay-3">
+        <div class="skill-icon">📊</div>
+        <h3>Cost of Production</h3>
+        <p>Know exactly what it costs you to grow a bushel. ABE builds a full line-by-line cost breakdown — fixed vs. variable, per acre and per bushel — using ISU AgDM 2026 benchmarks as defaults, with room to plug in your own real numbers wherever they differ.</p>
+        <span class="skill-source">ISU Extension AgDM A1-20 · 2026 Benchmarks</span>
+      </div>
+      <div class="skill-card reveal reveal-delay-4">
+        <div class="skill-icon">🌿</div>
+        <h3>Corn Disease Detector</h3>
+        <p>Something look off in your field? Snap a photo and send it to ABE. The CornCNN2 classifier identifies the disease, assesses severity, and recommends a course of action — all before you've left the field.</p>
+        <span class="skill-source">CornCNN2 · SAU-validated model · Corn only</span>
+      </div>
+      <div class="skill-card reveal reveal-delay-1">
+        <div class="skill-icon">🌦️</div>
+        <h3>Weather Forecast</h3>
+        <p>Get a 16-day Iowa county forecast alongside historical conditions — tied directly into disease risk, frost alerts, and crop stress signals. ABE flags what to watch for this week so you can plan ahead, not react after.</p>
+        <span class="skill-source">Open-Meteo · No API key · All Iowa counties</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how">
+  <div class="section-wrap">
+    <div class="how-header">
+      <div>
+        <div class="section-tag reveal">How It Works</div>
+        <h2 class="section-title reveal">Simple to use.<br/><em>Rigorous</em> inside.</h2>
+      </div>
+      <p class="section-lead reveal" style="margin-bottom:0; align-self:end;">
+        ABE uses Retrieval-Augmented Generation — connecting a language model to a curated library of verified Iowa documents instead of relying on its internal memory. Guidance you can cite, check, and trust.
+      </p>
+    </div>
+    <div class="steps-grid">
+      <div class="step reveal">
+        <div class="step-number">01</div>
+        <h4>You describe your situation</h4>
+        <p>Talk to ABE in plain language via Telegram — a lease price, a crop plan, a program question, or a photo of a sick plant.</p>
+        <span class="step-badge">Any phone · No setup</span>
+      </div>
+      <div class="step reveal reveal-delay-1">
+        <div class="step-number">02</div>
+        <h4>ABE retrieves the right documents</h4>
+        <p>A hybrid search pulls the most relevant Iowa-specific data from the knowledge base — ISU guides, USDA data, IFA program docs.</p>
+        <span class="step-badge">Verified sources only</span>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step-number">03</div>
+        <h4>Numbers run through deterministic code</h4>
+        <p>Any financial calculation — margins, benchmarks, savings estimates — is executed by Python, not the AI. Results are accurate and traceable.</p>
+        <span class="step-badge">No AI hallucinations on numbers</span>
+      </div>
+      <div class="step reveal reveal-delay-3">
+        <div class="step-number">04</div>
+        <h4>You get a sourced, plain-language answer</h4>
+        <p>Every response includes citations. If ABE isn't confident, it says so. No guessing on six-figure farm decisions.</p>
+        <span class="step-badge">Always cites its sources</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ETHICS ── -->
+<section id="ethics">
+  <div class="section-wrap">
+    <div class="section-tag reveal" style="color:var(--moss);">Ethical Design</div>
+    <h2 class="section-title reveal" style="color:var(--cream);">Built with <em>responsibility.</em></h2>
+    <p class="section-lead reveal">
+      Farm decisions carry real financial weight. ABE is designed from the ground up to be trustworthy, fair, and protective of the farmers who use it.
+    </p>
+    <div class="ethics-grid">
+      <div class="ethics-card reveal">
+        <div class="ethics-icon">🔒</div>
+        <h3>Data Privacy First</h3>
+        <p>ABE never sells farmer data to third parties. Profile information used for program screening is stored only to improve the relevance of your alerts — and only with your knowledge. Iowa farmers already distrust data-hungry platforms; ABE is designed to earn trust, not exploit it.</p>
+      </div>
+      <div class="ethics-card reveal reveal-delay-1">
+        <div class="ethics-icon">⚖️</div>
+        <h3>Financial Fairness</h3>
+        <p>Every financial output is calculated by deterministic Python code, not the AI. This is a non-negotiable design choice — research shows language models fail financial questions 81% of the time. No beginning farmer should make a six-figure leasing decision based on a hallucinated number.</p>
+      </div>
+      <div class="ethics-card reveal reveal-delay-2">
+        <div class="ethics-icon">📖</div>
+        <h3>Radical Transparency</h3>
+        <p>Every recommendation ABE makes includes citations to the source documents it used. If confidence falls below a threshold, ABE says so explicitly. Farmers can verify every answer themselves — ABE is a guide, not an oracle.</p>
+      </div>
+      <div class="ethics-card reveal reveal-delay-3">
+        <div class="ethics-icon">🌍</div>
+        <h3>Inclusive by Design</h3>
+        <p>ABE runs on Telegram — a free app available on any smartphone. No subscription, no rural broadband requirement, no technical knowledge needed. The system is also designed for offline resilience, so farmers in low-signal areas aren't excluded from the guidance they need.</p>
+      </div>
+      <div class="ethics-card reveal reveal-delay-4">
+        <div class="ethics-icon">🤝</div>
+        <h3>Not a Replacement for Humans</h3>
+        <p>ABE is not designed to replace ISU Extension agents, farm consultants, or lenders — it's designed to make their relationships with farmers more productive. When a situation requires human judgment, ABE says so and helps farmers find the right person to talk to.</p>
+      </div>
+      <div class="ethics-card reveal reveal-delay-1">
+        <div class="ethics-icon">🔄</div>
+        <h3>Continuously Updatable</h3>
+        <p>Because ABE retrieves from a curated document library rather than a trained model, knowledge stays current. When ISU updates its cost-of-production tables or the IFA changes program criteria, the knowledge base updates — no retraining, no risk of outdated answers baked into model weights.</p>
+      </div>
+    </div>
+    <div class="ethics-banner reveal">
+      <div class="ethics-banner-icon">⚠️</div>
+      <p><strong>Important disclaimer:</strong> ABE provides decision-support information, not professional legal, financial, or agronomic advice. Always verify program eligibility with the Iowa Finance Authority or USDA directly, and consult a licensed professional for complex decisions. ABE's role is to inform your judgment — not to replace it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── TEAM ── -->
+<section id="team">
+  <div class="section-wrap">
+    <div class="team-intro">
+      <div>
+        <div class="section-tag reveal">The Team</div>
+        <h2 class="section-title reveal">SAU <em>Hive Mind</em></h2>
+        <p class="section-lead reveal" style="margin-bottom:0;">
+          Five students from St. Ambrose University in Davenport, Iowa — bringing together agricultural economics, computer science, and business to build the advisor Iowa's beginning farmers deserve.
+        </p>
+      </div>
+      <div class="team-quote reveal">
+        <blockquote>
+          "The resources needed to help beginning farmers already exist. What's missing is access."
+        </blockquote>
+        <cite>— SAU Hive Mind, ABE Phase 1 Proposal</cite>
+      </div>
+    </div>
+    <div class="team-grid">
+      <div class="team-card reveal">
+        <div class="team-avatar">JC</div>
+        <h4>Jayden P. Coetzer</h4>
+        <span>Team Member</span>
+      </div>
+      <div class="team-card reveal reveal-delay-1">
+        <div class="team-avatar">LP</div>
+        <h4>Lucas C. Pizani</h4>
+        <span>Team Member</span>
+      </div>
+      <div class="team-card reveal reveal-delay-2">
+        <div class="team-avatar">FP</div>
+        <h4>Felipe R. Prieto</h4>
+        <span>Team Member</span>
+      </div>
+      <div class="team-card reveal reveal-delay-3">
+        <div class="team-avatar">EH</div>
+        <h4>Elyse P. Habersetzer</h4>
+        <span>Team Member</span>
+      </div>
+      <div class="team-card reveal reveal-delay-4">
+        <div class="team-avatar">LS</div>
+        <h4>Luke E. Sproule</h4>
+        <span>Team Member</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ── -->
+<section id="faq">
+  <div class="section-wrap">
+    <div class="section-tag reveal">Questions & Answers</div>
+    <h2 class="section-title reveal">Frequently <em>Asked</em></h2>
+    <p class="section-lead reveal">Everything you need to know before your first conversation with ABE.</p>
+    <div class="faq-grid" id="faqGrid">
+
+      <div class="faq-item">
+        <div class="faq-q">Is ABE free to use? <span class="arrow">▾</span></div>
+        <div class="faq-a">Yes. ABE is designed to be free for Iowa beginning farmers. The mission is to eliminate the financial barrier to expert farm business guidance — not to add another subscription cost.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How do I access ABE? <span class="arrow">▾</span></div>
+        <div class="faq-a">ABE runs as a Telegram bot. You don't need to install any special app — just open Telegram on your phone, find the ABE bot, and start a conversation. No setup, no dashboard to learn.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Can I trust ABE's financial numbers? <span class="arrow">▾</span></div>
+        <div class="faq-a">All calculations — margins, rental benchmarks, cost estimates — are run by deterministic Python code, not the AI. Research shows LLMs fail financial questions 81% of the time when calculating directly; ABE sidesteps this entirely. Every number has a source you can verify.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What data does ABE use? <span class="arrow">▾</span></div>
+        <div class="faq-a">ABE draws from ISU Extension's Ag Decision Maker series (crop costs, rental rates), USDA NASS and AMS for live Iowa commodity prices, Iowa Finance Authority program guides, and USDA FSA/EQIP documentation. All sources are publicly verifiable.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Does ABE store my data? <span class="arrow">▾</span></div>
+        <div class="faq-a">ABE is designed with data privacy in mind. Farmer profile data used for program eligibility screening is stored only to improve the relevance of your alerts. ABE never shares your information with third parties.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What if ABE doesn't know the answer? <span class="arrow">▾</span></div>
+        <div class="faq-a">If confidence falls below the threshold, ABE says so explicitly rather than guessing. It will direct you to the most relevant source and, where appropriate, suggest connecting with an ISU Extension agent or Iowa Finance Authority for complex, case-specific situations.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Does ABE work if I'm in a field with poor signal? <span class="arrow">▾</span></div>
+        <div class="faq-a">ABE is being designed with offline resilience in mind. Core knowledge resources can be cached locally so ABE can answer most questions without a live connection, syncing when connectivity returns.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is ABE only for corn and soybean farmers? <span class="arrow">▾</span></div>
+        <div class="faq-a">The Phase 1 prototype focuses on Iowa corn and soybean operations — the most common beginning farmer profile. The skill-based architecture means additional crops, livestock, and specialty operations can be added as ABE expands beyond the competition period.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── CONTACT ── -->
+<section id="contact">
+  <div class="section-wrap">
+    <div class="contact-grid">
+      <div>
+        <div class="section-tag reveal">Get In Touch</div>
+        <h2 class="section-title reveal">We'd love to<br/><em>hear from you.</em></h2>
+        <p class="section-lead reveal" style="margin-bottom: 36px;">
+          Whether you're a beginning Iowa farmer wanting early access, an extension agent interested in partnering, or a judge with questions — reach out.
+        </p>
+        <div class="contact-info">
+          <div class="contact-item reveal">
+            <div class="contact-item-icon">🎓</div>
+            <div>
+              <h4>Institution</h4>
+              <span>St. Ambrose University — Davenport, Iowa</span>
+            </div>
+          </div>
+          <div class="contact-item reveal reveal-delay-1">
+            <div class="contact-item-icon">🏆</div>
+            <div>
+              <h4>Competition</h4>
+              <span>Pi515 AI Challenge 2026 — SAU Hive Mind</span>
+            </div>
+          </div>
+          <div class="contact-item reveal reveal-delay-2">
+            <div class="contact-item-icon">💻</div>
+            <div>
+              <h4>Code Repository</h4>
+              <a href="https://github.com/lcpizani/ABE" target="_blank" rel="noopener">github.com/lcpizani/ABE</a>
+            </div>
+          </div>
+          <div class="contact-item reveal reveal-delay-3">
+            <div class="contact-item-icon">✈️</div>
+            <div>
+              <h4>Try ABE on Telegram</h4>
+              <a href="https://t.me/the_ABE_bot" target="_blank" rel="noopener">t.me/the_ABE_bot</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="contact-form reveal">
+        <h3>Send us a message</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" placeholder="Jane"/>
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" placeholder="Doe"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" placeholder="jane@farm.com"/>
+        </div>
+        <div class="form-group">
+          <label>I am a…</label>
+          <select>
+            <option value="">Select one</option>
+            <option>Beginning Iowa Farmer</option>
+            <option>ISU Extension Agent</option>
+            <option>Lender / Financial Institution</option>
+            <option>Competition Judge / Organizer</option>
+            <option>Researcher / Journalist</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea placeholder="Tell us how we can help, or share feedback about ABE…"></textarea>
+        </div>
+        <button class="form-submit" onclick="submitForm(event)">
+          Send Message →
+        </button>
+        <p class="form-note" style="font-size:0.75rem; color:rgba(18,13,6,0.4); margin-top:10px; text-align:center;"></p>
+        <div class="form-success" id="formSuccess">
+          <span>✅</span>
+          Thanks! We'll get back to you within 48 hours.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section id="cta">
+  <div class="section-wrap">
+    <div class="section-tag reveal" style="color:var(--moss); justify-content:center;">Get Started</div>
+    <h2 class="section-title reveal">Every Iowa farmer deserves<br/>a great <em>advisor.</em></h2>
+    <p class="section-lead reveal">
+      ABE won't replace your judgment — it will make sure your judgment is informed. Start your first conversation today.
+    </p>
+    <div class="cta-actions reveal">
+      <a class="btn-primary" href="https://t.me/the_ABE_bot" target="_blank" rel="noopener">Open ABE on Telegram ✈</a>
+      <a class="btn-outline" href="#skills" style="color:rgba(244,237,216,0.7); border-color:rgba(244,237,216,0.2);">Learn More About ABE</a>
+    </div>
+    <p class="telegram-note">Available via Telegram · Free for beginning Iowa farmers · Backed by Iowa-specific data</p>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-logo">ABE <span>Agricultural Business Expert · SAU Hive Mind · Pi515 AI Challenge 2026</span></div>
+  <div class="footer-links">
+    <a href="#about">About</a>
+    <a href="#skills">Skills</a>
+    <a href="#ethics">Ethics</a>
+    <a href="#team">Team</a>
+    <a href="#faq">FAQ</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <div class="footer-copy">Data sources: ISU Extension · USDA NASS/AMS · Iowa Finance Authority · USDA FSA</div>
+</footer>
+
+<script>
+  // ── EmailJS — Contact Form ──────────────────────────────────────────────────
+  //
+  // SETUP (takes ~5 minutes):
+  //   1. Create a free account at https://www.emailjs.com
+  //   2. Add an Email Service (Gmail, Outlook, etc.) → copy the Service ID
+  //   3. Create an Email Template → copy the Template ID
+  //      In the template body, use these variables:
+  //        {{from_name}}  {{from_email}}  {{role}}  {{message}}
+  //   4. Go to Account → Public Key → copy it
+  //   5. Paste all three values below:
+  //
+  const EMAILJS_PUBLIC_KEY  = '8QG38b51a_nvjlgAO';   // e.g. 'abc123XYZ'
+  const EMAILJS_SERVICE_ID  = 'service_thtnh1o';   // e.g. 'service_xxxxxx'
+  const EMAILJS_TEMPLATE_ID = 'template_vl3tl78';  // e.g. 'template_xxxxxx'
+
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+  async function submitForm(e) {
+    e.preventDefault();
+    const btn  = document.querySelector('.form-submit');
+    const note = document.querySelector('.form-note');
+
+    // Collect values
+    const first_name = document.querySelector('input[placeholder="Jane"]').value.trim();
+    const last_name  = document.querySelector('input[placeholder="Doe"]').value.trim();
+    const email      = document.querySelector('input[type="email"]').value.trim();
+    const role       = document.querySelector('select').value;
+    const message    = document.querySelector('textarea').value.trim();
+
+    // Client-side validation
+    if (!first_name || !last_name || !email || !message) {
+      note.textContent = '⚠ Please fill in all required fields.';
+      note.style.color = '#c0392b';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    note.textContent = '';
+
+    try {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        from_name:  first_name + ' ' + last_name,
+        from_email: email,
+        role:       role || 'Not specified',
+        message:    message,
+      });
+
+      // Success — show confirmation, then reset after 4 seconds
+      btn.style.display  = 'none';
+      note.style.display = 'none';
+      document.getElementById('formSuccess').style.display = 'block';
+
+      setTimeout(() => {
+        // Fade out the success message
+        const successEl = document.getElementById('formSuccess');
+        successEl.style.opacity = '0';
+        setTimeout(() => {
+          // Hide success message
+          successEl.style.display   = 'none';
+          successEl.style.opacity   = '1';
+          // Clear all form fields
+          document.querySelector('input[placeholder="Jane"]').value  = '';
+          document.querySelector('input[placeholder="Doe"]').value   = '';
+          document.querySelector('input[type="email"]').value        = '';
+          document.querySelector('select').value                     = '';
+          document.querySelector('textarea').value                   = '';
+          // Restore button and note
+          btn.style.display  = 'flex';
+          btn.disabled       = false;
+          btn.textContent    = 'Send Message →';
+          note.style.display = 'block';
+          note.textContent   = '';
+        }, 600);
+      }, 4000);
+
+    } catch (err) {
+      console.error('EmailJS error:', err);
+      btn.disabled = false;
+      btn.textContent = 'Send Message →';
+      // Show the real error so we can diagnose it
+      const detail = err?.text || err?.message || JSON.stringify(err) || 'Unknown error';
+      note.textContent = '⚠ Error: ' + detail;
+      note.style.color = '#c0392b';
+    }
+  }
+
+  // ── Hamburger toggle ──
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobileMenu');
+  function closeMobile() {
+    hamburger.classList.remove('open');
+    mobileMenu.classList.remove('open');
+  }
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('open');
+    mobileMenu.classList.toggle('open');
+  });
+  // Close when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#mainNav')) closeMobile();
+  });
+
+  // ── Scroll reveal ──
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => observer.observe(el));
+
+  // ── FAQ accordion ──
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      const item = q.parentElement;
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  });
+
+  // ── Nav hide on scroll down (desktop only) ──
+  let lastY = 0;
+  window.addEventListener('scroll', () => {
+    const nav = document.getElementById('mainNav');
+    const y = window.scrollY;
+    if (window.innerWidth > 768) {
+      nav.style.transform = (y > lastY && y > 80) ? 'translateY(-100%)' : 'translateY(0)';
+    } else {
+      nav.style.transform = 'translateY(0)';
+    }
+    lastY = y;
+  });
+</script>
+</body>
+</html>
